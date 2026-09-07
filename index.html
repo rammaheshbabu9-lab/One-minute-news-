@@ -1,0 +1,3531 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0,viewport-fit=cover">
+<title>One Minute News</title>
+
+<script src="https://cdn.tailwindcss.com"></script>
+
+<script>
+tailwind.config = {
+    darkMode: "class"
+};
+</script>
+
+<!-- SUPABASE -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+<style>
+*{box-sizing:border-box}
+
+html,body{
+    margin:0;
+    width:100%;
+    height:100%;
+    overflow:hidden;
+    font-family:Arial,Helvetica,sans-serif;
+    background:#000;
+    color:#fff;
+}
+
+button{
+    -webkit-tap-highlight-color:transparent;
+}
+
+.app{
+    width:100%;
+    height:100vh;
+    position:relative;
+    background:#050505;
+}
+
+@media(min-width:700px){
+    .app{
+        width:480px;
+        margin:auto;
+        box-shadow:0 0 70px rgba(0,0,0,.7);
+    }
+}
+
+/* ================= HEADER ================= */
+
+.header{
+    position:absolute;
+    top:0;
+    left:0;
+    right:0;
+    z-index:50;
+    padding:12px 13px 9px;
+    background:linear-gradient(
+        to bottom,
+        rgba(0,0,0,.98),
+        rgba(0,0,0,.88),
+        rgba(0,0,0,.25),
+        transparent
+    );
+}
+
+.logo{
+    font-size:17px;
+    font-weight:1000;
+    letter-spacing:-.5px;
+}
+
+.logo span{
+    color:#ef4444;
+}
+
+.live{
+    background:#dc2626;
+    color:#fff;
+    padding:4px 7px;
+    border-radius:5px;
+    font-size:8px;
+    font-weight:900;
+}
+
+.mode-switch{
+    background:rgba(255,255,255,.08);
+    border:1px solid rgba(255,255,255,.1);
+    border-radius:999px;
+    padding:5px 9px;
+    display:flex;
+    gap:7px;
+    font-size:10px;
+    font-weight:800;
+}
+
+.mode-active{
+    color:#ef4444;
+}
+
+.mode-inactive{
+    color:#888;
+}
+
+.breaking{
+    margin-top:9px;
+    height:31px;
+    border-radius:9px;
+    background:rgba(127,29,29,.32);
+    border:1px solid rgba(239,68,68,.25);
+    display:flex;
+    align-items:center;
+    gap:7px;
+    padding:0 9px;
+}
+
+.breaking-dot{
+    width:7px;
+    height:7px;
+    background:#ef4444;
+    border-radius:50%;
+    animation:pulse 1s infinite;
+}
+
+@keyframes pulse{
+    0%,100%{opacity:1}
+    50%{opacity:.3}
+}
+
+.categories{
+    display:flex;
+    gap:7px;
+    overflow-x:auto;
+    margin-top:8px;
+    scrollbar-width:none;
+}
+
+.categories::-webkit-scrollbar{
+    display:none;
+}
+
+.category{
+    flex:none;
+    border-radius:999px;
+    padding:6px 11px;
+    background:#181818;
+    border:1px solid #292929;
+    color:#999;
+    font-size:9px;
+    font-weight:800;
+}
+
+.category.active{
+    background:#dc2626;
+    border-color:#dc2626;
+    color:#fff;
+}
+
+/* ================= NEWS SCREEN ================= */
+
+.news-screen{
+    height:100vh;
+    overflow-y:auto;
+    padding-top:143px;
+    padding-bottom:82px;
+    scrollbar-width:none;
+}
+
+.news-screen::-webkit-scrollbar{
+    display:none;
+}
+
+.news-heading{
+    padding:0 13px 10px;
+}
+
+.news-heading h1{
+    font-size:20px;
+    font-weight:1000;
+    margin:0;
+}
+
+.news-heading p{
+    color:#777;
+    font-size:9px;
+    margin:4px 0 0;
+}
+
+/* ================= NEWS CARD ================= */
+
+.news-card{
+    margin:0 12px 14px;
+    border-radius:17px;
+    overflow:hidden;
+    background:#111;
+    border:1px solid #222;
+    box-shadow:0 5px 25px rgba(0,0,0,.35);
+}
+
+.news-photo-wrap{
+    position:relative;
+}
+
+.news-photo{
+    width:100%;
+    height:205px;
+    display:block;
+    object-fit:cover;
+    background:#222;
+}
+
+.news-tag{
+    position:absolute;
+    left:10px;
+    top:10px;
+    background:#dc2626;
+    padding:5px 8px;
+    border-radius:6px;
+    font-size:8px;
+    font-weight:900;
+}
+
+.news-read{
+    position:absolute;
+    right:10px;
+    top:10px;
+    width:37px;
+    height:37px;
+    border-radius:50%;
+    background:rgba(0,0,0,.75);
+    border:1px solid rgba(255,255,255,.2);
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    font-size:16px;
+}
+
+.news-body{
+    padding:13px;
+}
+
+.news-title{
+    font-size:18px;
+    line-height:1.25;
+    font-weight:950;
+    margin:0;
+}
+
+.news-description{
+    color:#a1a1aa;
+    font-size:12px;
+    line-height:1.5;
+    margin:8px 0 0;
+}
+
+.news-meta{
+    display:flex;
+    gap:8px;
+    align-items:center;
+    color:#777;
+    font-size:9px;
+    margin-top:10px;
+}
+
+.news-source{
+    margin-top:10px;
+    display:flex;
+    align-items:center;
+    gap:7px;
+}
+
+.source-logo{
+    width:27px;
+    height:27px;
+    border-radius:50%;
+    background:#dc2626;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    font-size:8px;
+    font-weight:1000;
+}
+
+.source-name{
+    font-size:9px;
+    font-weight:800;
+    color:#999;
+}
+
+.news-actions{
+    border-top:1px solid #222;
+    margin-top:11px;
+    padding-top:9px;
+    display:flex;
+    justify-content:space-between;
+}
+
+.news-action{
+    color:#999;
+    font-size:10px;
+    display:flex;
+    align-items:center;
+    gap:3px;
+}
+
+.news-action:active{
+    transform:scale(.92);
+}
+
+.liked{
+    color:#ef4444;
+}
+
+/* ================= TRENDING ================= */
+
+.trending{
+    padding:0 12px 17px;
+}
+
+.trending-header{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    margin-bottom:9px;
+}
+
+.trending-title{
+    font-size:16px;
+    font-weight:1000;
+}
+
+.trending-sub{
+    font-size:9px;
+    color:#777;
+}
+
+.trending-list{
+    display:flex;
+    overflow-x:auto;
+    gap:9px;
+    scrollbar-width:none;
+}
+
+.trending-list::-webkit-scrollbar{
+    display:none;
+}
+
+.trend-card{
+    min-width:240px;
+    background:#151515;
+    border:1px solid #292929;
+    border-radius:14px;
+    padding:11px;
+}
+
+.trend-number{
+    width:26px;
+    height:26px;
+    border-radius:50%;
+    background:#dc2626;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    font-size:10px;
+    font-weight:1000;
+}
+
+.trend-text{
+    margin-top:8px;
+    font-size:12px;
+    line-height:1.35;
+    font-weight:850;
+}
+
+.trend-time{
+    color:#666;
+    font-size:8px;
+    margin-top:7px;
+}
+
+/* ================= VIDEO REELS ================= */
+
+.video-screen{
+    height:100vh;
+    overflow-y:auto;
+    scroll-snap-type:y mandatory;
+    scrollbar-width:none;
+}
+
+.video-screen::-webkit-scrollbar{
+    display:none;
+}
+
+.video-page{
+    height:100vh;
+    min-height:100vh;
+    scroll-snap-align:start;
+    position:relative;
+    overflow:hidden;
+    background:#000;
+}
+
+.video{
+    position:absolute;
+    inset:0;
+    width:100%;
+    height:100%;
+    object-fit:cover;
+    background:#000;
+}
+
+.video-gradient{
+    position:absolute;
+    inset:0;
+    background:
+        linear-gradient(
+            to bottom,
+            rgba(0,0,0,.65),
+            transparent 30%,
+            transparent 48%,
+            rgba(0,0,0,.92)
+        );
+    pointer-events:none;
+}
+
+.video-info{
+    position:absolute;
+    left:13px;
+    right:70px;
+    bottom:90px;
+    z-index:5;
+}
+
+.video-tag{
+    display:inline-block;
+    background:#dc2626;
+    padding:5px 8px;
+    border-radius:5px;
+    font-size:8px;
+    font-weight:900;
+    margin-bottom:8px;
+}
+
+.video-title{
+    font-size:20px;
+    line-height:1.2;
+    font-weight:1000;
+}
+
+.video-description{
+    color:#ddd;
+    font-size:11px;
+    line-height:1.45;
+    margin-top:7px;
+}
+
+.video-side{
+    position:absolute;
+    right:9px;
+    bottom:88px;
+    z-index:10;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    gap:13px;
+}
+
+.video-button{
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    color:#fff;
+    font-size:8px;
+    font-weight:800;
+}
+
+.video-circle{
+    width:43px;
+    height:43px;
+    border-radius:50%;
+    background:rgba(0,0,0,.62);
+    border:1px solid rgba(255,255,255,.16);
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    font-size:17px;
+    margin-bottom:3px;
+}
+
+.video-progress{
+    position:absolute;
+    left:0;
+    right:0;
+    bottom:71px;
+    height:2px;
+    background:rgba(255,255,255,.2);
+    z-index:20;
+}
+
+.video-progress-bar{
+    height:100%;
+    width:0;
+    background:#fff;
+}
+
+/* ================= BOTTOM NAV ================= */
+
+.bottom-nav{
+    position:absolute;
+    left:0;
+    right:0;
+    bottom:0;
+    z-index:60;
+    height:68px;
+    background:rgba(0,0,0,.94);
+    backdrop-filter:blur(18px);
+    border-top:1px solid #222;
+    display:flex;
+    align-items:center;
+    justify-content:space-around;
+}
+
+.nav-button{
+    color:#777;
+    font-size:8px;
+    font-weight:800;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    gap:3px;
+}
+
+.nav-button span{
+    font-size:19px;
+}
+
+.nav-button.active{
+    color:#ef4444;
+}
+
+/* ================= MODALS ================= */
+
+.modal{
+    position:absolute;
+    inset:0;
+    z-index:100;
+    background:rgba(0,0,0,.96);
+    padding:14px;
+}
+
+.search-input{
+    width:100%;
+    background:#151515;
+    border:1px solid #333;
+    border-radius:13px;
+    padding:12px 14px;
+    color:#fff;
+    outline:none;
+    font-size:13px;
+}
+
+.search-result{
+    background:#121212;
+    border:1px solid #292929;
+    border-radius:13px;
+    padding:12px;
+    margin-top:8px;
+    text-align:left;
+    width:100%;
+}
+
+.comments-panel{
+    position:absolute;
+    left:0;
+    right:0;
+    bottom:0;
+    z-index:120;
+    background:#0d0d0d;
+    border-top:1px solid #333;
+    border-radius:25px 25px 0 0;
+    transform:translateY(100%);
+    transition:.3s;
+}
+
+.comments-panel.open{
+    transform:translateY(0);
+}
+
+.comment-list{
+    max-height:280px;
+    overflow-y:auto;
+    padding:13px;
+}
+
+.share-modal{
+    position:absolute;
+    inset:0;
+    z-index:130;
+    background:rgba(0,0,0,.75);
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    padding:20px;
+}
+
+.share-box{
+    width:100%;
+    max-width:380px;
+    background:#111;
+    border:1px solid #333;
+    border-radius:24px;
+    padding:20px;
+}
+
+/* ================= UTIL ================= */
+
+.hidden{
+    display:none !important;
+}
+
+@keyframes heartPop{
+    0%{
+        transform:scale(.2);
+        opacity:0;
+    }
+    30%{
+        transform:scale(1.3);
+        opacity:1;
+    }
+    100%{
+        transform:scale(1);
+        opacity:0;
+    }
+}
+
+.heart-pop{
+    animation:heartPop .8s forwards;
+}
+</style>
+</head>
+
+<body>
+
+<div class="app">
+
+<!-- =====================================================
+     HEADER
+===================================================== -->
+
+<header class="header">
+
+    <div class="flex items-center justify-between">
+
+        <div class="flex items-center gap-2">
+
+            <span class="live">LIVE</span>
+
+            <div class="logo">
+                ONE<span>MINUTE</span> NEWS
+            </div>
+
+        </div>
+
+        <div class="flex items-center gap-2">
+
+            <div class="mode-switch">
+
+                <button
+                    id="newsTab"
+                    class="mode-active"
+                    onclick="showNews()">
+                    News
+                </button>
+
+                <span class="text-zinc-600">|</span>
+
+                <button
+                    id="videoTab"
+                    class="mode-inactive"
+                    onclick="showVideos()">
+                    Videos
+                </button>
+
+            </div>
+
+            <button
+                onclick="openSearch()"
+                class="w-8 h-8 rounded-full bg-zinc-900 border border-zinc-800">
+                🔍
+            </button>
+
+        </div>
+
+    </div>
+
+    <div class="breaking">
+
+        <span class="breaking-dot"></span>
+
+        <b class="text-red-400 text-[8px]">
+            BREAKING
+        </b>
+
+        <span
+            id="breakingText"
+            class="text-[9px] text-zinc-300 truncate">
+            Latest breaking news updates...
+        </span>
+
+    </div>
+
+    <div class="categories">
+
+        <button data-category="all"
+            class="category active"
+            onclick="setCategory('all')">
+            All
+        </button>
+
+        <button data-category="business"
+            class="category"
+            onclick="setCategory('business')">
+            💼 Business
+        </button>
+
+        <button data-category="sports"
+            class="category"
+            onclick="setCategory('sports')">
+            🏆 Sports
+        </button>
+
+        <button data-category="cinema"
+            class="category"
+            onclick="setCategory('cinema')">
+            🎬 Cinema
+        </button>
+
+        <button data-category="tech"
+            class="category"
+            onclick="setCategory('tech')">
+            💻 Tech
+        </button>
+
+        <button data-category="politics"
+            class="category"
+            onclick="setCategory('politics')">
+            🏛️ Politics
+        </button>
+
+    </div>
+
+</header>
+
+
+<!-- NEWS -->
+
+<main id="newsScreen" class="news-screen">
+    <div id="newsContainer"></div>
+</main>
+
+
+<!-- VIDEOS -->
+
+<main id="videoScreen" class="video-screen hidden">
+    <div id="videoContainer"></div>
+</main>
+
+
+<!-- BOTTOM NAV -->
+
+<nav class="bottom-nav">
+
+    <button id="feedNav"
+        class="nav-button active"
+        onclick="goFeed()">
+        <span>⚡</span>
+        Feed
+    </button>
+
+    <button id="exploreNav"
+        class="nav-button"
+        onclick="goVideos()">
+        <span>▶️</span>
+        Videos
+    </button>
+
+    <button id="trendingNav"
+        class="nav-button"
+        onclick="goTrending()">
+        <span>🔥</span>
+        Trending
+    </button>
+
+    <button id="savedNav"
+        class="nav-button"
+        onclick="showSaved()">
+        <span>🔖</span>
+        Saved
+    </button>
+
+</nav>
+
+
+<!-- SEARCH -->
+
+<div id="searchModal" class="modal hidden">
+
+    <div class="flex gap-2">
+
+        <input
+            id="searchInput"
+            class="search-input"
+            placeholder="Search news..."
+            oninput="searchNews(this.value)">
+
+        <button
+            onclick="closeSearch()"
+            class="w-12 rounded-xl bg-zinc-900 border border-zinc-800">
+            ✕
+        </button>
+
+    </div>
+
+    <div id="searchResults"></div>
+
+</div>
+
+
+<!-- COMMENTS -->
+
+<div id="commentsPanel" class="comments-panel">
+
+    <div class="p-4 border-b border-zinc-800 flex justify-between">
+
+        <b>Comments</b>
+
+        <button onclick="closeComments()">
+            ✕
+        </button>
+
+    </div>
+
+    <div id="commentList" class="comment-list">
+        <div class="text-center text-zinc-600 text-xs">
+            Loading comments...
+        </div>
+    </div>
+
+    <div class="p-3 border-t border-zinc-800 flex gap-2">
+
+        <input
+            id="commentInput"
+            class="flex-1 bg-zinc-900 rounded-full px-4 py-2 text-xs outline-none"
+            placeholder="Write a comment...">
+
+        <button
+            onclick="postComment()"
+            class="bg-red-600 rounded-full px-4 text-xs font-bold">
+            Post
+        </button>
+
+    </div>
+
+</div>
+
+
+<!-- SHARE -->
+
+<div id="shareModal" class="share-modal hidden">
+
+    <div class="share-box">
+
+        <div class="flex justify-between mb-6">
+
+            <b>Share News</b>
+
+            <button onclick="closeShare()">
+                ✕
+            </button>
+
+        </div>
+
+        <div class="grid grid-cols-4 gap-4 text-center text-[9px]">
+
+            <button onclick="shareWhatsApp()">
+                <div class="w-12 h-12 mx-auto rounded-full bg-green-600 flex items-center justify-center text-xl">
+                    💬
+                </div>
+                <div class="mt-2">WhatsApp</div>
+            </button>
+
+            <button onclick="shareTelegram()">
+                <div class="w-12 h-12 mx-auto rounded-full bg-blue-500 flex items-center justify-center text-xl">
+                    ✈️
+                </div>
+                <div class="mt-2">Telegram</div>
+            </button>
+
+            <button onclick="copyShare()">
+                <div class="w-12 h-12 mx-auto rounded-full bg-zinc-700 flex items-center justify-center text-xl">
+                    🔗
+                </div>
+                <div class="mt-2">Copy</div>
+            </button>
+
+            <button onclick="nativeShare()">
+                <div class="w-12 h-12 mx-auto rounded-full bg-purple-600 flex items-center justify-center text-xl">
+                    📤
+                </div>
+                <div class="mt-2">More</div>
+            </button>
+
+        </div>
+
+    </div>
+
+</div>
+
+
+<script>
+
+/* =====================================================
+   SUPABASE CONFIG
+===================================================== */
+
+const SUPABASE_URL =
+    "https://eaowxilhfzyukzetgqxo.supabase.co";
+
+const SUPABASE_KEY =
+    "sb_publishable_Z3xsADypaOjX8GEQEOLUdg_vbxynHRx";
+
+const supabaseClient =
+    window.supabase.createClient(
+        SUPABASE_URL,
+        SUPABASE_KEY
+    );
+
+
+/* =====================================================
+   FALLBACK NEWS
+   Used only when DB is empty/unavailable
+===================================================== */
+
+const fallbackNewsData = [
+
+{
+    id:"demo-news-1",
+    category:"business",
+    tag:"MARKETS",
+    time:"5 mins ago",
+    title:"India Markets Start Strong As Investors React To Latest Economic Signals",
+    description:"Markets remain active as investors track economic growth, business activity and global developments.",
+    image:"https://images.unsplash.com/photo-1526304640581-d334cdbbf45e?auto=format&fit=crop&w=900&q=80",
+    views:102000,
+    likes:45100,
+    shares:12000,
+    source:"One Minute Business"
+},
+
+{
+    id:"demo-news-2",
+    category:"sports",
+    tag:"CRICKET",
+    time:"12 mins ago",
+    title:"Cricket Fans Celebrate A Spectacular Batting Performance",
+    description:"The latest match delivers a major performance that quickly becomes one of the day's biggest sports stories.",
+    image:"https://images.unsplash.com/photo-1531415074968-036ba1b575da?auto=format&fit=crop&w=900&q=80",
+    views:189000,
+    likes:88200,
+    shares:24000,
+    source:"One Minute Sports"
+},
+
+{
+    id:"demo-news-3",
+    category:"cinema",
+    tag:"CINEMA",
+    time:"24 mins ago",
+    title:"New Pan-India Movie Creates Huge Buzz Across Social Media",
+    description:"The latest release attracts strong audience attention with impressive opening-day discussions.",
+    image:"https://images.unsplash.com/photo-1489599849927-2ee91cede3ba?auto=format&fit=crop&w=900&q=80",
+    views:241000,
+    likes:112400,
+    shares:35000,
+    source:"One Minute Cinema"
+},
+
+{
+    id:"demo-news-4",
+    category:"tech",
+    tag:"AI & TECH",
+    time:"35 mins ago",
+    title:"New AI Tools Are Changing The Way People Work And Learn",
+    description:"Artificial intelligence continues to expand into education, productivity and everyday digital services.",
+    image:"https://images.unsplash.com/photo-1518770660439-4636190af475?auto=format&fit=crop&w=900&q=80",
+    views:91000,
+    likes:43100,
+    shares:11000,
+    source:"One Minute Tech"
+},
+
+{
+    id:"demo-news-5",
+    category:"politics",
+    tag:"INDIA",
+    time:"48 mins ago",
+    title:"Important National Developments Become Today's Major Talking Point",
+    description:"Political and policy developments remain among the most discussed stories of the day.",
+    image:"https://images.unsplash.com/photo-1529107386315-e1a2ed48a620?auto=format&fit=crop&w=900&q=80",
+    views:155000,
+    likes:67400,
+    shares:20000,
+    source:"One Minute India"
+},
+
+{
+    id:"demo-news-6",
+    category:"business",
+    tag:"STARTUPS",
+    time:"1 hour ago",
+    title:"Indian Startups Continue To Attract Attention From Global Investors",
+    description:"Technology-focused businesses remain a major area of interest for investors and entrepreneurs.",
+    image:"https://images.unsplash.com/photo-1556761175-b413da4baf72?auto=format&fit=crop&w=900&q=80",
+    views:76000,
+    likes:39800,
+    shares:9000,
+    source:"One Minute Business"
+}
+
+];
+
+
+const fallbackTrendingData = [
+
+{
+    id:"demo-trend-1",
+    title:"Latest cricket performance dominates today's discussions",
+    time:"Trending now"
+},
+
+{
+    id:"demo-trend-2",
+    title:"New AI technology becomes one of today's biggest stories",
+    time:"Trending now"
+},
+
+{
+    id:"demo-trend-3",
+    title:"Pan-India cinema release creates huge social media buzz",
+    time:"Trending now"
+},
+
+{
+    id:"demo-trend-4",
+    title:"Markets react to important economic developments",
+    time:"Trending now"
+},
+
+{
+    id:"demo-trend-5",
+    title:"Major national policy update attracts public attention",
+    time:"Trending now"
+}
+
+];
+
+
+const fallbackVideoData = [
+
+{
+    id:"demo-video-101",
+    tag:"TOP NEWS",
+    title:"One Minute News — Today's Biggest Headlines",
+    description:"The important stories you need to know in under one minute.",
+    video:"https://cdn.coverr.co/videos/coverr-a-man-working-on-his-laptop-1574/1080p.mp4"
+},
+
+{
+    id:"demo-video-102",
+    tag:"SPORTS",
+    title:"Sports News In 60 Seconds",
+    description:"Fast sports updates, results and major moments.",
+    video:"https://cdn.coverr.co/videos/coverr-football-player-running-1572/1080p.mp4"
+},
+
+{
+    id:"demo-video-103",
+    tag:"TECH",
+    title:"Technology News In One Minute",
+    description:"AI, gadgets, startups and the latest technology stories.",
+    video:"https://cdn.coverr.co/videos/coverr-a-woman-using-a-smartphone-1575/1080p.mp4"
+}
+
+];
+
+
+/* =====================================================
+   LIVE DATA
+===================================================== */
+
+let newsData=[];
+let trendingData=[];
+let videoData=[];
+
+let currentCategory="all";
+
+let savedItems=JSON.parse(
+    localStorage.getItem("oneMinuteSaved") || "[]"
+);
+
+let likedNews=JSON.parse(
+    localStorage.getItem("oneMinuteLikedNews") || "{}"
+);
+
+let likedVideos=JSON.parse(
+    localStorage.getItem("oneMinuteLikedVideos") || "{}"
+);
+
+let viewedNews=JSON.parse(
+    localStorage.getItem("oneMinuteViewedNews") || "[]"
+);
+
+let shareTitle="One Minute News";
+
+let currentCommentNewsId=null;
+let currentCommentVideoId=null;
+
+let currentShareNewsId=null;
+
+let muted=true;
+
+
+/* =====================================================
+   LOAD NEWS FROM SUPABASE
+===================================================== */
+
+async function loadNews(){
+
+    try{
+
+        const {data,error}=await supabaseClient
+            .from("news")
+            .select("*")
+            .eq("published",true)
+            .order("published_at",{ascending:false});
+
+        if(error){
+            console.error("News DB error:",error);
+            newsData=[...fallbackNewsData];
+            return;
+        }
+
+        if(data && data.length){
+
+            newsData=data.map(item=>({
+
+                id:item.id,
+
+                category:item.category || "all",
+
+                tag:item.tag || "NEWS",
+
+                time:formatTime(item.published_at),
+
+                title:item.title || "",
+
+                description:item.description || "",
+
+                image:item.image_url || "",
+
+                views:Number(item.views || 0),
+
+                likes:Number(item.likes || 0),
+
+                shares:Number(item.shares || 0),
+
+                source:item.source || "One Minute News"
+
+            }));
+
+        }else{
+
+            newsData=[...fallbackNewsData];
+
+        }
+
+    }catch(error){
+
+        console.error(error);
+
+        newsData=[...fallbackNewsData];
+
+    }
+
+}
+
+
+/* =====================================================
+   LOAD TRENDING
+===================================================== */
+
+async function loadTrending(){
+
+    try{
+
+        const {data,error}=await supabaseClient
+            .from("trending")
+            .select("*")
+            .eq("published",true)
+            .order("rank",{ascending:true});
+
+        if(error){
+
+            console.error(
+                "Trending DB error:",
+                error
+            );
+
+            trendingData=[
+                ...fallbackTrendingData
+            ];
+
+            return;
+
+        }
+
+        if(data && data.length){
+
+            trendingData=data.map(item=>({
+
+                id:item.id,
+
+                title:item.title || "",
+
+                time:item.time || "Trending now"
+
+            }));
+
+        }else{
+
+            trendingData=[
+                ...fallbackTrendingData
+            ];
+
+        }
+
+    }catch(error){
+
+        trendingData=[
+            ...fallbackTrendingData
+        ];
+
+    }
+
+}
+
+
+/* =====================================================
+   LOAD VIDEOS
+===================================================== */
+
+async function loadVideos(){
+
+    try{
+
+        const {data,error}=await supabaseClient
+            .from("videos")
+            .select("*")
+            .eq("published",true)
+            .order("created_at",{ascending:false});
+
+        if(error){
+
+            console.error(
+                "Videos DB error:",
+                error
+            );
+
+            videoData=[
+                ...fallbackVideoData
+            ];
+
+            return;
+
+        }
+
+        if(data && data.length){
+
+            videoData=data.map(item=>({
+
+                id:item.id,
+
+                tag:item.tag || "VIDEO",
+
+                title:item.title || "",
+
+                description:item.description || "",
+
+                video:item.video_url || "",
+
+                thumbnail:item.thumbnail_url || ""
+
+            }));
+
+        }else{
+
+            videoData=[
+                ...fallbackVideoData
+            ];
+
+        }
+
+    }catch(error){
+
+        videoData=[
+            ...fallbackVideoData
+        ];
+
+    }
+
+}
+
+
+/* =====================================================
+   RENDER NEWS
+===================================================== */
+
+function renderNews(){
+
+    const container=
+        document.getElementById(
+            "newsContainer"
+        );
+
+    let list =
+        currentCategory==="all"
+        ? newsData
+        : newsData.filter(
+            n=>n.category===currentCategory
+        );
+
+    let html="";
+
+
+    /* TRENDING */
+
+    if(currentCategory==="all"){
+
+        html+=`
+
+        <section class="trending">
+
+            <div class="trending-header">
+
+                <div class="trending-title">
+                    🔥 TRENDING
+                </div>
+
+                <div class="trending-sub">
+                    What's hot now
+                </div>
+
+            </div>
+
+            <div class="trending-list">
+
+                ${trendingData.map(
+                    (item,index)=>`
+
+                    <button
+                        onclick="openTrending('${escapeAttribute(item.id)}')"
+                        class="trend-card text-left">
+
+                        <div class="trend-number">
+                            ${index+1}
+                        </div>
+
+                        <div class="trend-text">
+                            ${escapeHTML(item.title)}
+                        </div>
+
+                        <div class="trend-time">
+                            ${escapeHTML(item.time)}
+                        </div>
+
+                    </button>
+
+                `).join("")}
+
+            </div>
+
+        </section>
+
+        `;
+
+    }
+
+
+    html+=`
+
+        <div class="news-heading">
+
+            <h1>
+                ${currentCategory==="all"
+                    ?"LATEST NEWS"
+                    :currentCategory.toUpperCase()}
+            </h1>
+
+            <p>
+                Fast news. Clear information. One minute.
+            </p>
+
+        </div>
+
+    `;
+
+
+    if(!list.length){
+
+        html+=`
+
+        <div class="text-center text-zinc-600 text-xs p-10">
+            No news available in this category.
+        </div>
+
+        `;
+
+    }
+
+
+    list.forEach(item=>{
+
+        const liked=
+            !!likedNews[item.id];
+
+        const saved=
+            savedItems.includes(
+                "news-"+item.id
+            );
+
+        html+=`
+
+        <article
+            id="news-${escapeAttribute(item.id)}"
+            data-news-id="${escapeAttribute(item.id)}"
+            class="news-card">
+
+            <div class="news-photo-wrap">
+
+                <img
+                    src="${escapeAttribute(item.image)}"
+                    class="news-photo"
+                    loading="lazy"
+                    alt="${escapeAttribute(item.title)}"
+                    onerror="this.style.display='none'">
+
+                <span class="news-tag">
+                    ${escapeHTML(item.tag)}
+                </span>
+
+                <button
+                    onclick="speakNews('${escapeAttribute(item.id)}')"
+                    class="news-read"
+                    title="Listen to this news">
+                    🔊
+                </button>
+
+            </div>
+
+
+            <div class="news-body">
+
+                <h2 class="news-title">
+                    ${escapeHTML(item.title)}
+                </h2>
+
+                <p class="news-description">
+                    ${escapeHTML(item.description)}
+                </p>
+
+
+                <div class="news-meta">
+
+                    <span>
+                        👁️ ${formatNumber(item.views)}
+                    </span>
+
+                    <span>•</span>
+
+                    <span>
+                        ❤️ ${formatNumber(item.likes)}
+                    </span>
+
+                    <span>•</span>
+
+                    <span>
+                        ${escapeHTML(item.time)}
+                    </span>
+
+                </div>
+
+
+                <div class="news-source">
+
+                    <div class="source-logo">
+                        1M
+                    </div>
+
+                    <div class="source-name">
+                        ${escapeHTML(item.source)}
+                    </div>
+
+                </div>
+
+
+                <div class="news-actions">
+
+                    <button
+                        onclick="likeNews('${escapeAttribute(item.id)}')"
+                        class="news-action ${liked?"liked":""}">
+
+                        ${liked?"❤️":"♡"}
+                        Like
+
+                    </button>
+
+
+                    <button
+                        onclick="openComments('news','${escapeAttribute(item.id)}')"
+                        class="news-action">
+
+                        💬 Comment
+
+                    </button>
+
+
+                    <button
+                        onclick="openShare('${escapeAttribute(item.id)}')"
+                        class="news-action">
+
+                        ↗️ Share
+
+                    </button>
+
+
+                    <button
+                        onclick="saveNews('${escapeAttribute(item.id)}')"
+                        class="news-action">
+
+                        ${saved?"🔖":"☆"}
+                        ${saved?"Saved":"Save"}
+
+                    </button>
+
+                </div>
+
+            </div>
+
+        </article>
+
+        `;
+
+    });
+
+
+    container.innerHTML=html;
+
+    setupNewsViewObserver();
+
+}
+
+
+/* =====================================================
+   NEWS VIEW TRACKING
+===================================================== */
+
+let newsViewObserver=null;
+
+function setupNewsViewObserver(){
+
+    if(newsViewObserver){
+        newsViewObserver.disconnect();
+    }
+
+    newsViewObserver=
+        new IntersectionObserver(
+            entries=>{
+
+                entries.forEach(entry=>{
+
+                    if(
+                        entry.isIntersecting &&
+                        entry.intersectionRatio>=.65
+                    ){
+
+                        const id=
+                            entry.target
+                                .getAttribute(
+                                    "data-news-id"
+                                );
+
+                        if(id){
+
+                            incrementNewsView(id);
+
+                        }
+
+                    }
+
+                });
+
+            },
+            {
+                threshold:[.65]
+            }
+        );
+
+
+    document
+        .querySelectorAll(".news-card")
+        .forEach(card=>{
+            newsViewObserver.observe(card);
+        });
+
+}
+
+
+/* =====================================================
+   INCREMENT NEWS VIEW
+===================================================== */
+
+async function incrementNewsView(id){
+
+    if(
+        viewedNews.includes(String(id))
+    ){
+        return;
+    }
+
+    viewedNews.push(String(id));
+
+    localStorage.setItem(
+        "oneMinuteViewedNews",
+        JSON.stringify(viewedNews)
+    );
+
+
+    const item=
+        newsData.find(
+            x=>String(x.id)===String(id)
+        );
+
+    if(item){
+
+        item.views=
+            Number(item.views || 0)+1;
+
+        const visibleCard=
+            document.getElementById(
+                "news-"+CSS.escape(String(id))
+            );
+
+        if(visibleCard){
+
+            const meta=
+                visibleCard.querySelector(
+                    ".news-meta"
+                );
+
+            if(meta){
+
+                const firstSpan=
+                    meta.querySelector("span");
+
+                if(firstSpan){
+
+                    firstSpan.innerHTML=
+                        "👁️ "+
+                        formatNumber(item.views);
+
+                }
+
+            }
+
+        }
+
+    }
+
+
+    if(isUUID(id)){
+
+        try{
+
+            const {error}=
+                await supabaseClient.rpc(
+                    "increment_news_views",
+                    {
+                        p_news_id:id
+                    }
+                );
+
+            if(error){
+                console.error(
+                    "View RPC error:",
+                    error
+                );
+            }
+
+        }catch(error){
+
+            console.error(error);
+
+        }
+
+    }
+
+}
+
+
+/* =====================================================
+   VIDEO RENDER
+===================================================== */
+
+function renderVideos(){
+
+    const container=
+        document.getElementById(
+            "videoContainer"
+        );
+
+    container.innerHTML="";
+
+    videoData.forEach(item=>{
+
+        const page=
+            document.createElement("section");
+
+        page.className="video-page";
+
+        page.innerHTML=`
+
+            <video
+                id="video-${escapeAttribute(item.id)}"
+                class="video"
+                src="${escapeAttribute(item.video)}"
+                ${item.thumbnail
+                    ?`poster="${escapeAttribute(item.thumbnail)}"`
+                    :""}
+                loop
+                muted
+                playsinline
+                preload="metadata"
+                onclick="toggleVideo('${escapeAttribute(item.id)}')">
+            </video>
+
+            <div class="video-gradient"></div>
+
+
+            <div
+                id="videoHeart-${escapeAttribute(item.id)}"
+                class="absolute inset-0 z-30
+                flex items-center justify-center
+                pointer-events-none">
+            </div>
+
+
+            <div class="video-info">
+
+                <span class="video-tag">
+                    ${escapeHTML(item.tag)}
+                </span>
+
+                <div class="video-title">
+                    ${escapeHTML(item.title)}
+                </div>
+
+                <div class="video-description">
+                    ${escapeHTML(item.description)}
+                </div>
+
+                <div class="text-[9px] text-zinc-400 mt-3">
+                    @oneminutenews • #News
+                </div>
+
+            </div>
+
+
+            <div class="video-side">
+
+                <button
+                    onclick="likeVideo('${escapeAttribute(item.id)}')"
+                    class="video-button">
+
+                    <div
+                        id="videoLike-${escapeAttribute(item.id)}"
+                        class="video-circle">
+                        ${likedVideos[item.id]?"❤️":"♡"}
+                    </div>
+
+                    Like
+
+                </button>
+
+
+                <button
+                    onclick="openComments('video','${escapeAttribute(item.id)}')"
+                    class="video-button">
+
+                    <div class="video-circle">
+                        💬
+                    </div>
+
+                    Comment
+
+                </button>
+
+
+                <button
+                    onclick="openShareVideo('${escapeAttribute(item.id)}')"
+                    class="video-button">
+
+                    <div class="video-circle">
+                        ↗️
+                    </div>
+
+                    Share
+
+                </button>
+
+
+                <button
+                    onclick="saveVideo('${escapeAttribute(item.id)}')"
+                    class="video-button">
+
+                    <div
+                        id="videoSave-${escapeAttribute(item.id)}"
+                        class="video-circle">
+                        ${savedItems.includes("video-"+item.id)
+                            ?"🔖"
+                            :"☆"}
+                    </div>
+
+                    Save
+
+                </button>
+
+
+                <button
+                    onclick="toggleMute()"
+                    class="video-button">
+
+                    <div class="video-circle">
+                        <span id="muteIcon">
+                            🔇
+                        </span>
+                    </div>
+
+                    Sound
+
+                </button>
+
+            </div>
+
+
+            <div class="video-progress">
+
+                <div
+                    id="progress-${escapeAttribute(item.id)}"
+                    class="video-progress-bar">
+                </div>
+
+            </div>
+
+        `;
+
+
+        page.addEventListener(
+            "dblclick",
+            ()=>{
+
+                const heart=
+                    document.getElementById(
+                        "videoHeart-"+item.id
+                    );
+
+                if(heart){
+
+                    heart.innerHTML=
+                        `<div class="text-7xl heart-pop">
+                            ❤️
+                        </div>`;
+
+                    setTimeout(
+                        ()=>heart.innerHTML="",
+                        800
+                    );
+
+                }
+
+                if(!likedVideos[item.id]){
+                    likeVideo(item.id);
+                }
+
+            }
+        );
+
+
+        container.appendChild(page);
+
+    });
+
+
+    setupVideoObserver();
+
+}
+
+
+/* =====================================================
+   VIDEO OBSERVER
+===================================================== */
+
+let videoObserver=null;
+
+function setupVideoObserver(){
+
+    if(videoObserver){
+        videoObserver.disconnect();
+    }
+
+    videoObserver=
+        new IntersectionObserver(
+            entries=>{
+
+                entries.forEach(entry=>{
+
+                    const video=
+                        entry.target.querySelector(
+                            "video"
+                        );
+
+                    if(!video)return;
+
+                    if(entry.isIntersecting){
+
+                        video.muted=muted;
+
+                        video.play().catch(()=>{});
+
+                    }else{
+
+                        video.pause();
+
+                    }
+
+                });
+
+            },
+            {
+                threshold:.65
+            }
+        );
+
+
+    document
+        .querySelectorAll(".video-page")
+        .forEach(page=>
+            videoObserver.observe(page)
+        );
+
+
+    document
+        .querySelectorAll(".video")
+        .forEach(video=>{
+
+            video.addEventListener(
+                "timeupdate",
+                ()=>{
+
+                    const id=
+                        video.id.replace(
+                            "video-",
+                            ""
+                        );
+
+                    const bar=
+                        document.getElementById(
+                            "progress-"+id
+                        );
+
+                    if(
+                        bar &&
+                        video.duration &&
+                        Number.isFinite(video.duration)
+                    ){
+
+                        bar.style.width=
+                            (
+                                video.currentTime /
+                                video.duration *
+                                100
+                            )+"%";
+
+                    }
+
+                }
+            );
+
+        });
+
+}
+
+
+/* =====================================================
+   NEWS / VIDEO SWITCH
+===================================================== */
+
+function showNews(){
+
+    document
+        .getElementById("newsScreen")
+        .classList.remove("hidden");
+
+    document
+        .getElementById("videoScreen")
+        .classList.add("hidden");
+
+    document
+        .getElementById("newsTab")
+        .className="mode-active";
+
+    document
+        .getElementById("videoTab")
+        .className="mode-inactive";
+
+    activateNav("feedNav");
+
+}
+
+
+function showVideos(){
+
+    document
+        .getElementById("newsScreen")
+        .classList.add("hidden");
+
+    document
+        .getElementById("videoScreen")
+        .classList.remove("hidden");
+
+    document
+        .getElementById("newsTab")
+        .className="mode-inactive";
+
+    document
+        .getElementById("videoTab")
+        .className="mode-active";
+
+    activateNav("exploreNav");
+
+    setTimeout(
+        setupVideoObserver,
+        100
+    );
+
+}
+
+
+/* =====================================================
+   CATEGORY
+===================================================== */
+
+function setCategory(category){
+
+    currentCategory=category;
+
+    document
+        .querySelectorAll(".category")
+        .forEach(btn=>
+            btn.classList.remove("active")
+        );
+
+    const selected=
+        document.querySelector(
+            `[data-category="${category}"]`
+        );
+
+    if(selected){
+        selected.classList.add("active");
+    }
+
+    renderNews();
+
+    showNews();
+
+    document
+        .getElementById("newsScreen")
+        .scrollTop=0;
+
+}
+
+
+/* =====================================================
+   LIKE NEWS
+===================================================== */
+
+async function likeNews(id){
+
+    const item=
+        newsData.find(
+            x=>String(x.id)===String(id)
+        );
+
+    if(!item)return;
+
+    const newState=
+        !likedNews[id];
+
+    likedNews[id]=newState;
+
+    localStorage.setItem(
+        "oneMinuteLikedNews",
+        JSON.stringify(likedNews)
+    );
+
+
+    item.likes=
+        Math.max(
+            0,
+            Number(item.likes || 0)
+            +(newState?1:-1)
+        );
+
+
+    renderNews();
+
+
+    if(isUUID(id)){
+
+        try{
+
+            const {error}=
+                await supabaseClient.rpc(
+                    "increment_news_likes",
+                    {
+                        p_news_id:id,
+                        p_delta:newState?1:-1
+                    }
+                );
+
+            if(error){
+
+                console.error(
+                    "Like RPC error:",
+                    error
+                );
+
+            }
+
+        }catch(error){
+
+            console.error(error);
+
+        }
+
+    }
+
+}
+
+
+/* =====================================================
+   LIKE VIDEO
+===================================================== */
+
+function likeVideo(id){
+
+    likedVideos[id]=
+        !likedVideos[id];
+
+    localStorage.setItem(
+        "oneMinuteLikedVideos",
+        JSON.stringify(likedVideos)
+    );
+
+
+    const button=
+        document.getElementById(
+            "videoLike-"+id
+        );
+
+    if(button){
+
+        button.innerText=
+            likedVideos[id]
+            ?"❤️"
+            :"♡";
+
+        button.style.background=
+            likedVideos[id]
+            ?"rgba(220,38,38,.9)"
+            :"rgba(0,0,0,.62)";
+
+    }
+
+}
+
+
+/* =====================================================
+   SAVE NEWS
+===================================================== */
+
+function saveNews(id){
+
+    const key="news-"+id;
+
+    if(savedItems.includes(key)){
+
+        savedItems=
+            savedItems.filter(
+                x=>x!==key
+            );
+
+    }else{
+
+        savedItems.push(key);
+
+    }
+
+    localStorage.setItem(
+        "oneMinuteSaved",
+        JSON.stringify(savedItems)
+    );
+
+    renderNews();
+
+}
+
+
+/* =====================================================
+   SAVE VIDEO
+===================================================== */
+
+function saveVideo(id){
+
+    const key="video-"+id;
+
+    if(savedItems.includes(key)){
+
+        savedItems=
+            savedItems.filter(
+                x=>x!==key
+            );
+
+    }else{
+
+        savedItems.push(key);
+
+    }
+
+    localStorage.setItem(
+        "oneMinuteSaved",
+        JSON.stringify(savedItems)
+    );
+
+
+    const icon=
+        document.getElementById(
+            "videoSave-"+id
+        );
+
+    if(icon){
+
+        icon.innerText=
+            savedItems.includes(key)
+            ?"🔖"
+            :"☆";
+
+    }
+
+}
+
+
+/* =====================================================
+   NEWS VOICE
+===================================================== */
+
+function speakNews(id){
+
+    const item=
+        newsData.find(
+            x=>String(x.id)===String(id)
+        );
+
+    if(!item)return;
+
+
+    if(!("speechSynthesis" in window)){
+
+        alert(
+            "Voice is not supported on this device/browser."
+        );
+
+        return;
+
+    }
+
+
+    speechSynthesis.cancel();
+
+
+    const text=
+        item.tag+
+        ". "+
+        item.title+
+        ". "+
+        item.description;
+
+
+    const speech=
+        new SpeechSynthesisUtterance(text);
+
+    speech.lang="en-IN";
+    speech.rate=.92;
+    speech.pitch=1;
+
+
+    const voices=
+        speechSynthesis.getVoices();
+
+    const indianVoice=
+        voices.find(
+            voice=>
+                voice.lang &&
+                voice.lang
+                    .toLowerCase()
+                    .includes("en-in")
+        );
+
+    if(indianVoice){
+        speech.voice=indianVoice;
+    }
+
+
+    speechSynthesis.speak(speech);
+
+}
+
+
+/* =====================================================
+   VIDEO CONTROLS
+===================================================== */
+
+function toggleVideo(id){
+
+    const video=
+        document.getElementById(
+            "video-"+id
+        );
+
+    if(!video)return;
+
+
+    if(video.paused){
+
+        video.play().catch(()=>{});
+
+    }else{
+
+        video.pause();
+
+    }
+
+}
+
+
+function toggleMute(){
+
+    muted=!muted;
+
+    document
+        .querySelectorAll(".video")
+        .forEach(video=>{
+            video.muted=muted;
+        });
+
+
+    const icon=
+        document.getElementById(
+            "muteIcon"
+        );
+
+    if(icon){
+
+        icon.innerText=
+            muted
+            ?"🔇"
+            :"🔊";
+
+    }
+
+}
+
+
+/* =====================================================
+   SEARCH
+===================================================== */
+
+function openSearch(){
+
+    document
+        .getElementById("searchModal")
+        .classList.remove("hidden");
+
+    setTimeout(
+        ()=>{
+            document
+                .getElementById("searchInput")
+                .focus();
+        },
+        100
+    );
+
+}
+
+
+function closeSearch(){
+
+    document
+        .getElementById("searchModal")
+        .classList.add("hidden");
+
+    document
+        .getElementById("searchInput")
+        .value="";
+
+    document
+        .getElementById("searchResults")
+        .innerHTML="";
+
+}
+
+
+function searchNews(value){
+
+    const results=
+        document.getElementById(
+            "searchResults"
+        );
+
+    const q=
+        value.trim().toLowerCase();
+
+    if(!q){
+
+        results.innerHTML="";
+        return;
+
+    }
+
+
+    const matches=
+        newsData.filter(
+            item=>
+                item.title.toLowerCase().includes(q) ||
+                item.description.toLowerCase().includes(q) ||
+                item.category.toLowerCase().includes(q) ||
+                item.tag.toLowerCase().includes(q)
+        );
+
+
+    if(!matches.length){
+
+        results.innerHTML=`
+
+            <div class="text-center
+            text-zinc-600 text-xs mt-10">
+                No news found
+            </div>
+
+        `;
+
+        return;
+
+    }
+
+
+    results.innerHTML=
+        matches.map(item=>`
+
+            <button
+                onclick="openSearchNews('${escapeAttribute(item.id)}')"
+                class="search-result">
+
+                <div class="text-[8px]
+                text-red-500 font-black">
+                    ${escapeHTML(item.tag)}
+                </div>
+
+                <div class="text-sm
+                font-bold mt-1">
+                    ${escapeHTML(item.title)}
+                </div>
+
+                <div class="text-[9px]
+                text-zinc-500 mt-1">
+                    ${escapeHTML(item.time)}
+                </div>
+
+            </button>
+
+        `).join("");
+
+}
+
+
+function openSearchNews(id){
+
+    closeSearch();
+
+    showNews();
+
+    setTimeout(()=>{
+
+        const element=
+            document.getElementById(
+                "news-"+CSS.escape(String(id))
+            );
+
+        if(element){
+
+            element.scrollIntoView({
+                behavior:"smooth",
+                block:"center"
+            });
+
+        }
+
+    },100);
+
+}
+
+
+/* =====================================================
+   TRENDING
+===================================================== */
+
+function openTrending(id){
+
+    const item=
+        trendingData.find(
+            x=>String(x.id)===String(id)
+        );
+
+    if(!item)return;
+
+
+    alert(
+        "🔥 TRENDING\n\n"+
+        item.title
+    );
+
+}
+
+
+function goTrending(){
+
+    showNews();
+
+    activateNav("trendingNav");
+
+    currentCategory="all";
+
+    document
+        .querySelectorAll(".category")
+        .forEach(x=>
+            x.classList.remove("active")
+        );
+
+    document
+        .querySelector(
+            '[data-category="all"]'
+        )
+        .classList.add("active");
+
+
+    renderNews();
+
+
+    setTimeout(()=>{
+
+        const section=
+            document.querySelector(
+                ".trending"
+            );
+
+        if(section){
+
+            section.scrollIntoView({
+                behavior:"smooth"
+            });
+
+        }
+
+    },100);
+
+}
+
+
+/* =====================================================
+   SAVED
+===================================================== */
+
+function showSaved(){
+
+    activateNav("savedNav");
+
+
+    if(!savedItems.length){
+
+        alert(
+            "🔖 No saved news yet."
+        );
+
+        return;
+
+    }
+
+
+    const savedNews=
+        savedItems
+            .filter(
+                x=>x.startsWith("news-")
+            )
+            .map(
+                x=>x.substring(5)
+            );
+
+
+    if(!savedNews.length){
+
+        alert(
+            "🔖 Saved videos: "+
+            savedItems.filter(
+                x=>x.startsWith("video-")
+            ).length
+        );
+
+        return;
+
+    }
+
+
+    showNews();
+
+    currentCategory="all";
+
+    renderNews();
+
+
+    setTimeout(()=>{
+
+        const first=
+            document.getElementById(
+                "news-"+CSS.escape(
+                    String(savedNews[0])
+                )
+            );
+
+        if(first){
+
+            first.scrollIntoView({
+                behavior:"smooth"
+            });
+
+        }
+
+    },100);
+
+}
+
+
+/* =====================================================
+   BOTTOM NAV
+===================================================== */
+
+function goFeed(){
+
+    activateNav("feedNav");
+
+    showNews();
+
+}
+
+
+function goVideos(){
+
+    activateNav("exploreNav");
+
+    showVideos();
+
+}
+
+
+function activateNav(id){
+
+    document
+        .querySelectorAll(".nav-button")
+        .forEach(btn=>
+            btn.classList.remove("active")
+        );
+
+    const btn=
+        document.getElementById(id);
+
+    if(btn){
+        btn.classList.add("active");
+    }
+
+}
+
+
+/* =====================================================
+   COMMENTS
+===================================================== */
+
+async function openComments(type,id){
+
+    currentCommentNewsId=
+        type==="news"
+        ?id
+        :null;
+
+    currentCommentVideoId=
+        type==="video"
+        ?id
+        :null;
+
+
+    document
+        .getElementById("commentsPanel")
+        .classList.add("open");
+
+
+    await loadComments();
+
+}
+
+
+function closeComments(){
+
+    document
+        .getElementById("commentsPanel")
+        .classList.remove("open");
+
+}
+
+
+async function loadComments(){
+
+    const list=
+        document.getElementById(
+            "commentList"
+        );
+
+    list.innerHTML=`
+
+        <div class="text-center
+        text-zinc-600 text-xs">
+            Loading comments...
+        </div>
+
+    `;
+
+
+    try{
+
+        let query=
+            supabaseClient
+                .from("comments")
+                .select(
+                    "id,user_name,text,created_at"
+                )
+                .eq("approved",true)
+                .order(
+                    "created_at",
+                    {ascending:true}
+                )
+                .limit(100);
+
+
+        if(currentCommentNewsId){
+
+            query=
+                query.eq(
+                    "news_id",
+                    currentCommentNewsId
+                );
+
+        }else if(currentCommentVideoId){
+
+            query=
+                query.eq(
+                    "video_id",
+                    currentCommentVideoId
+                );
+
+        }else{
+
+            list.innerHTML=`
+                <div class="text-center
+                text-zinc-600 text-xs">
+                    Select a news item first.
+                </div>
+            `;
+
+            return;
+
+        }
+
+
+        const {data,error}=
+            await query;
+
+
+        if(error){
+
+            console.error(
+                "Comments load error:",
+                error
+            );
+
+            list.innerHTML=`
+                <div class="text-center
+                text-zinc-600 text-xs">
+                    Comments unavailable.
+                </div>
+            `;
+
+            return;
+
+        }
+
+
+        if(!data || !data.length){
+
+            list.innerHTML=`
+                <div class="text-center
+                text-zinc-600 text-xs py-8">
+                    No approved comments yet.
+                </div>
+            `;
+
+            return;
+
+        }
+
+
+        list.innerHTML=
+            data.map(comment=>`
+
+                <div class="flex gap-2 mb-4">
+
+                    <div class="w-8 h-8 rounded-full
+                    bg-red-600 flex items-center
+                    justify-center text-xs font-bold">
+                        ${escapeHTML(
+                            (
+                                comment.user_name ||
+                                "A"
+                            )
+                            .charAt(0)
+                            .toUpperCase()
+                        )}
+                    </div>
+
+                    <div>
+
+                        <b class="text-xs">
+                            ${escapeHTML(
+                                comment.user_name ||
+                                "Anonymous"
+                            )}
+                        </b>
+
+                        <p class="text-[10px]
+                        text-zinc-500">
+                            ${escapeHTML(
+                                comment.text
+                            )}
+                        </p>
+
+                    </div>
+
+                </div>
+
+            `).join("");
+
+
+    }catch(error){
+
+        console.error(error);
+
+        list.innerHTML=`
+            <div class="text-center
+            text-zinc-600 text-xs">
+                Comments unavailable.
+            </div>
+        `;
+
+    }
+
+}
+
+
+/* =====================================================
+   POST COMMENT
+===================================================== */
+
+async function postComment(){
+
+    const input=
+        document.getElementById(
+            "commentInput"
+        );
+
+    const text=
+        input.value.trim();
+
+    if(!text)return;
+
+
+    if(
+        !currentCommentNewsId &&
+        !currentCommentVideoId
+    ){
+
+        alert(
+            "Please open comments from a news or video."
+        );
+
+        return;
+
+    }
+
+
+    const button=
+        document.querySelector(
+            "#commentsPanel button.bg-red-600"
+        );
+
+
+    if(button){
+
+        button.disabled=true;
+        button.innerText="...";
+
+    }
+
+
+    try{
+
+        const payload={
+
+            news_id:
+                currentCommentNewsId,
+
+            video_id:
+                currentCommentVideoId,
+
+            user_name:
+                "You",
+
+            text:text,
+
+            approved:false
+
+        };
+
+
+        const {error}=
+            await supabaseClient
+                .from("comments")
+                .insert([payload]);
+
+
+        if(error){
+
+            console.error(
+                "Comment insert error:",
+                error
+            );
+
+            alert(
+                "Unable to post comment. Please try again."
+            );
+
+            return;
+
+        }
+
+
+        input.value="";
+
+
+        alert(
+            "Comment submitted for approval."
+        );
+
+
+        await loadComments();
+
+
+    }catch(error){
+
+        console.error(error);
+
+        alert(
+            "Unable to post comment."
+        );
+
+    }finally{
+
+        if(button){
+
+            button.disabled=false;
+            button.innerText="Post";
+
+        }
+
+    }
+
+}
+
+
+/* =====================================================
+   SHARE
+===================================================== */
+
+function openShare(id){
+
+    const item=
+        newsData.find(
+            x=>String(x.id)===String(id)
+        );
+
+    if(!item)return;
+
+
+    shareTitle=item.title;
+
+    currentShareNewsId=id;
+
+
+    document
+        .getElementById("shareModal")
+        .classList.remove("hidden");
+
+}
+
+
+function openShareVideo(id){
+
+    const item=
+        videoData.find(
+            x=>String(x.id)===String(id)
+        );
+
+    if(!item)return;
+
+
+    shareTitle=item.title;
+
+    currentShareNewsId=null;
+
+
+    document
+        .getElementById("shareModal")
+        .classList.remove("hidden");
+
+}
+
+
+function closeShare(){
+
+    document
+        .getElementById("shareModal")
+        .classList.add("hidden");
+
+}
+
+
+async function shareWhatsApp(){
+
+    await registerShare();
+
+    const url=
+        "https://wa.me/?text="+
+        encodeURIComponent(
+            shareTitle+
+            " — One Minute News"
+        );
+
+    window.open(
+        url,
+        "_blank"
+    );
+
+}
+
+
+async function shareTelegram(){
+
+    await registerShare();
+
+    const url=
+        "https://t.me/share/url?url="+
+        encodeURIComponent(
+            location.href
+        )+
+        "&text="+
+        encodeURIComponent(
+            shareTitle
+        );
+
+    window.open(
+        url,
+        "_blank"
+    );
+
+}
+
+
+async function copyShare(){
+
+    await registerShare();
+
+    const text=
+        location.href+
+        " — "+
+        shareTitle;
+
+
+    if(navigator.clipboard){
+
+        try{
+
+            await navigator.clipboard.writeText(text);
+
+            alert("Link copied!");
+
+        }catch(error){
+
+            fallbackCopy(text);
+
+        }
+
+    }else{
+
+        fallbackCopy(text);
+
+    }
+
+}
+
+
+async function nativeShare(){
+
+    await registerShare();
+
+    if(navigator.share){
+
+        try{
+
+            await navigator.share({
+
+                title:"One Minute News",
+
+                text:shareTitle,
+
+                url:location.href
+
+            });
+
+        }catch(e){}
+
+    }else{
+
+        copyShare();
+
+    }
+
+}
+
+
+/* =====================================================
+   REGISTER SHARE
+===================================================== */
+
+async function registerShare(){
+
+    const id=currentShareNewsId;
+
+    if(!id)return;
+
+    const item=
+        newsData.find(
+            x=>String(x.id)===String(id)
+        );
+
+    if(item){
+
+        item.shares=
+            Number(item.shares || 0)+1;
+
+    }
+
+
+    if(isUUID(id)){
+
+        try{
+
+            const {error}=
+                await supabaseClient.rpc(
+                    "increment_news_shares",
+                    {
+                        p_news_id:id
+                    }
+                );
+
+            if(error){
+
+                console.error(
+                    "Share RPC error:",
+                    error
+                );
+
+            }
+
+        }catch(error){
+
+            console.error(error);
+
+        }
+
+    }
+
+}
+
+
+function fallbackCopy(text){
+
+    const textarea=
+        document.createElement("textarea");
+
+    textarea.value=text;
+
+    textarea.style.position="fixed";
+    textarea.style.opacity="0";
+
+    document.body.appendChild(
+        textarea
+    );
+
+    textarea.select();
+
+    try{
+
+        document.execCommand("copy");
+
+        alert("Link copied!");
+
+    }catch(error){
+
+        alert(
+            "Copy is not supported."
+        );
+
+    }
+
+    textarea.remove();
+
+}
+
+
+/* =====================================================
+   BREAKING NEWS ROTATION
+===================================================== */
+
+const breakingNews=[
+
+    "Markets remain active as investors track the latest economic developments.",
+
+    "Major cricket update becomes one of today's most discussed sports stories.",
+
+    "New AI technology attracts attention from students and professionals.",
+
+    "Latest cinema release creates huge social media buzz.",
+
+    "Important national developments remain in focus today."
+
+];
+
+let breakingIndex=0;
+
+
+setInterval(()=>{
+
+    breakingIndex=
+        (breakingIndex+1)%
+        breakingNews.length;
+
+
+    const element=
+        document.getElementById(
+            "breakingText"
+        );
+
+    if(element){
+
+        element.innerText=
+            breakingNews[breakingIndex];
+
+    }
+
+},5000);
+
+
+/* =====================================================
+   HELPERS
+===================================================== */
+
+function formatNumber(number){
+
+    number=Number(number || 0);
+
+
+    if(number>=1000000){
+
+        return (
+            number/1000000
+        ).toFixed(1)+"M";
+
+    }
+
+
+    if(number>=1000){
+
+        return (
+            number/1000
+        ).toFixed(1)+"K";
+
+    }
+
+
+    return number;
+
+}
+
+
+function formatTime(dateValue){
+
+    if(!dateValue){
+        return "Just now";
+    }
+
+
+    const date=
+        new Date(dateValue);
+
+    if(
+        Number.isNaN(
+            date.getTime()
+        )
+    ){
+
+        return "Just now";
+
+    }
+
+
+    const diff=
+        Date.now()-
+        date.getTime();
+
+
+    const seconds=
+        Math.floor(
+            diff/1000
+        );
+
+
+    if(seconds<60){
+
+        return "Just now";
+
+    }
+
+
+    const minutes=
+        Math.floor(
+            seconds/60
+        );
+
+
+    if(minutes<60){
+
+        return minutes+
+            " mins ago";
+
+    }
+
+
+    const hours=
+        Math.floor(
+            minutes/60
+        );
+
+
+    if(hours<24){
+
+        return hours+
+            " hours ago";
+
+    }
+
+
+    const days=
+        Math.floor(
+            hours/24
+        );
+
+
+    if(days<7){
+
+        return days+
+            " days ago";
+
+    }
+
+
+    return date.toLocaleDateString();
+
+}
+
+
+function isUUID(value){
+
+    if(!value)return false;
+
+    return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
+        .test(String(value));
+
+}
+
+
+function escapeHTML(value){
+
+    return String(value ?? "")
+        .replace(/&/g,"&amp;")
+        .replace(/</g,"&lt;")
+        .replace(/>/g,"&gt;")
+        .replace(/"/g,"&quot;")
+        .replace(/'/g,"&#039;");
+
+}
+
+
+function escapeAttribute(value){
+
+    return escapeHTML(value);
+
+}
+
+
+/* =====================================================
+   DATABASE INITIALIZATION
+===================================================== */
+
+async function initializeApp(){
+
+    const container=
+        document.getElementById(
+            "newsContainer"
+        );
+
+    container.innerHTML=`
+
+        <div class="text-center
+        text-zinc-600 text-xs p-10">
+            Loading latest news...
+        </div>
+
+    `;
+
+
+    await Promise.all([
+
+        loadNews(),
+
+        loadTrending(),
+
+        loadVideos()
+
+    ]);
+
+
+    renderNews();
+
+    renderVideos();
+
+    showNews();
+
+}
+
+
+/* =====================================================
+   START APP
+===================================================== */
+
+window.addEventListener(
+    "load",
+    initializeApp
+);
+
+</script>
+
+</div>
+
+</body>
+</html>
